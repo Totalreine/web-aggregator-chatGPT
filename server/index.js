@@ -1,4 +1,5 @@
 import { createRequire } from "module";
+import { ChatGPTUnofficialProxyAPI } from "chatgpt";
 
 const require = createRequire(import.meta.url);
 const puppeteer = require("puppeteer");
@@ -17,6 +18,31 @@ app.get("/api", (req, res) => {
   });
 });
 
+async function chatgptFunction(content) {
+  const api = new ChatGPTUnofficialProxyAPI({
+    email: "email",
+    password: "password",
+  });
+  await api.initSession();
+
+  const getBrandName = await api.sendMessage(
+    `I have a raw text of a website, what is the brand name in a single word? ${content}`
+  );
+
+  const getBrandDescription = await api.sendMessage(
+    `I have a raw text of a website, can you extract the description of the website from the raw text. I need only the description and nothing else. ${content}`
+  );
+
+  return {
+    brandName: getBrandName.response,
+    brandDescription: getBrandDescription.response,
+  };
+}
+
+const database = [];
+
+const generateID = () => Math.random().toString(36).substring(2, 10);
+
 app.post("/api/url", (req, res) => {
   const { url } = req.body;
 
@@ -24,11 +50,9 @@ app.post("/api/url", (req, res) => {
     const browser = await puppeteer.launch();
     const page = await browser.newPage();
     await page.goto(url);
-
     const websiteContent = await page.evaluate(() => {
       return document.documentElement.innerText.trim();
     });
-
     const websiteOgImage = await page.evaluate(() => {
       const metas = document.getElementsByTagName("meta");
       for (let i = 0; i < metas.length; i++) {
@@ -38,7 +62,18 @@ app.post("/api/url", (req, res) => {
       }
     });
 
-    console.log({ websiteContent, websiteOgImage });
+    let result = await chatgptFunction(websiteContent);
+
+    result.brandImage = websiteOgImage;
+    result.id = generateID();
+
+    database.push(result);
+
+    return res.json({
+      message: "Request successful!",
+      database,
+    });
+
     await browser.close();
   })();
 });

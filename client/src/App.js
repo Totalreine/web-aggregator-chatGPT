@@ -5,10 +5,7 @@ import Loading from "./Loading";
 const App = () => {
   const [url, setURL] = useState("");
   const [loading, setLoading] = useState(false);
-
-  if (loading) {
-    return <Loading />;
-  }
+  const [websiteContent, setWebsiteContent] = useState([]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -32,11 +29,19 @@ const App = () => {
       const data = await request.json();
       if (data.message) {
         setLoading(false);
+        setWebsiteContent(data.database);
       }
     } catch (err) {
       console.error(err);
     }
   }
+
+  if (loading) {
+    return <Loading />;
+  }
+
+  const trimDescription = (content) =>
+    content.match(/(?:"[^"]*"|^[^"]*$)/)[0].replace(/"/g, "");
 
   return (
     <div className="home">
@@ -52,6 +57,15 @@ const App = () => {
         />
         <button onClick={handleSubmit}>ADD WEBSITE</button>
       </form>
+      <main className="website__container ">
+        {websiteContent.map((item) => (
+          <div className="website__item" key={item.id}>
+            <img src={item?.brandImage} alt={item?.brandName} />
+            <h3>{item?.brandName}</h3>
+            <p>{trimDescription(item?.brandDescription)}</p>
+          </div>
+        ))}
+      </main>
     </div>
   );
 };
