@@ -1,9 +1,14 @@
 import "./App.css";
 import React, { useState } from "react";
+import Loading from "./Loading";
 
 const App = () => {
   const [url, setURL] = useState("");
   const [loading, setLoading] = useState(false);
+
+  if (loading) {
+    return <Loading />;
+  }
 
   const handleSubmit = (e) => {
     e.preventDefault();
